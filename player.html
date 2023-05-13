@@ -102,15 +102,6 @@
 </head>
 
 <body>
-  <!-- <video id="my-video" class="video-js" width="640" height="360" controls crossorigin="anonymous" preload="auto"
-    data-setup='{}'>
-    <source
-      src="https://curio.oli.cmu.edu/contents/ML_Specialization_Supervised_Learning/videos/3-11 Regularized logistic regression.mp4"
-      type="video/mp4">
-    <track kind="captions"
-      src="https://curio.oli.cmu.edu/contents/ML_Specialization_Supervised_Learning/captions/3-11 Regularized logistic regression.vtt"
-      srclang="en" label="English" default>
-  </video> -->
   <div id="myModal" class="modal">
     <div class="modal-content">
       <span id="close-btn" class="close">&times;</span>
@@ -131,7 +122,6 @@
 
 
   <button id="capture-btn">Capture</button>
-  <canvas id="debug-canvas" width="640" height="360"></canvas>
   <script src='./player_files/tesseract.min.js'></script>
   <script src="./player_files/video.min.js"></script>
   <script type="text/javascript">
@@ -163,9 +153,9 @@
     };
 
 
-    // These two types of contents should be able to fetch from /videos and /assmt in respectively,
-    // but I haven't uploaded new examples with new schemas to the backend.
-    // You may use following two objs to develop at this moment.
+    // These two types of contents should be able to fetch from /videos and /assmt respectively,
+    // but I haven't uploaded new examples following new schemas to the backend.
+    // You may use these two objs to develop at this moment.
     const materials = []
     materials.push({
       // Fetch from https://curio.oli.cmu.edu/videos/64329a988d77e5fc4f56c86b
@@ -220,16 +210,19 @@
     }
 
     function initPlayer(material) {
-      // Dirty hack, I believe that there be a better way to do this...
       const player = document.createElement('video');
       player.setAttribute('id', 'my-video');
       player.setAttribute('class', 'video-js');
-      player.setAttribute('width', '640');
-      player.setAttribute('height', '360');
-      player.setAttribute("controls","controls");
       player.setAttribute('crossorigin', 'anonymous');
-      player.setAttribute('preload', 'auto');
-      player.setAttribute('data-setup', '{}');
+      
+      // Available attrs:
+      // https://videojs.com/guides/options
+      player.setAttribute('data-setup', `{
+        "preload": "auto",
+        "controls": "controls",
+        "width": "640",
+        "height": "360"
+      }`);
 
       // Remove https://curio.oli.cmu.edu/ in production env.
       player.innerHTML = 
