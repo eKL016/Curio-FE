@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Page</title>
+  <style>
+    /* Add your CSS styles here */
+    .experiment {
+      border: 1px solid black;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="experiments-container">
+    <!-- Experiments will be loaded dynamically here -->
+  </div>
+
+  <script>
+    const getExperiments = async () => {
+      try {
+        const response = await fetch('https://curio.oli.cmu.edu/exps?' +
+          new URLSearchParams({
+            populated: true
+          }), {
+          method: "GET",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+    const experimentsContainer = document.getElementById('experiments-container');
+
+    window.addEventListener('load', async () => {
+      const experiments = await getExperiments();
+      experiments.forEach(exp => {
+        console.log(exp);
+        const expElement = document.createElement('div');
+        expElement.className = 'experiment';
+
+        // Populate user data
+        const user = document.createElement('p');
+        user.innerText = `User: ${exp.user.externalID}, Nickname: ${exp.user.nickname}`;
+        expElement.appendChild(user);
+
+        // Populate videos data
+        const videos = document.createElement('div');
+        exp.videos.forEach(video => {
+          const videoElement = document.createElement('p');
+          videoElement.innerText = `Title: ${video.title}, Description: ${video.description}, Learning Objectives: ${video.learningObjs.join(', ')}`;
+          videos.appendChild(videoElement);
+        });
+        expElement.appendChild(videos);
+
+        // Populate order data
+        const order = document.createElement('p');
+        order.innerText = `Order: ${exp.order}`;
+        expElement.appendChild(order);
+
+        // Populate finishedAt data
+        const finishedAt = document.createElement('p');
+        finishedAt.innerText = `Finished At: ${exp.finishedAt || 'N.A.'}`;
+        expElement.appendChild(finishedAt);
+
+        // Add event listener to start experiment
+        expElement.addEventListener('click', () => {
+          // Start experiment
+          // Send experiment data to video player
+        });
+
+        experimentsContainer.appendChild(expElement);
+      });
+    })
+  </script>
+</body>
+
+</html>
