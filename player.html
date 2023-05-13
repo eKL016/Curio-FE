@@ -26,8 +26,10 @@
       backdrop-filter: blur(15px);
       border-radius: 30px;
       padding: 20px;
-      max-width: 300px;
-      /* Adjust as needed */
+      max-width: 350px;
+      min-width: 300px;
+      max-height: 50vh;
+      overflow-y: auto;
       color: #fff;
     }
 
@@ -36,10 +38,15 @@
       margin-bottom: 10px;
     }
 
+    .modal-header p {
+      font-size: 12px;
+    }
+
     .modal-tabs {
       display: flex;
       justify-content: space-between;
       margin-bottom: 20px;
+      border-bottom: 1px solid #fff;
     }
 
     .tab {
@@ -56,8 +63,9 @@
 
     .video-info {
       display: flex;
-      align-items: center;
+      align-items: start; /* change center to start so the elements align at the top */
       margin-bottom: 10px;
+      flex-direction: row; /* add this line */
     }
 
     .video-thumbnail {
@@ -67,6 +75,7 @@
       /* Placeholder */
       position: relative;
       margin-right: 10px;
+      flex: 1;
     }
 
     .video-duration {
@@ -82,6 +91,7 @@
 
     .video-details {
       font-size: 14px;
+      flex: 1;
     }
 
     .close {
@@ -214,7 +224,7 @@
       player.setAttribute('id', 'my-video');
       player.setAttribute('class', 'video-js');
       player.setAttribute('crossorigin', 'anonymous');
-      
+
       // Available attrs:
       // https://videojs.com/guides/options
       player.setAttribute('data-setup', `{
@@ -225,7 +235,7 @@
       }`);
 
       // Remove https://curio.oli.cmu.edu/ in production env.
-      player.innerHTML = 
+      player.innerHTML =
       `
         <source
           src="https://curio.oli.cmu.edu/${material.video.filename}"
@@ -340,6 +350,8 @@
         // Inside your detect function, after getting output.data.text
         const outputText = output.data.text;
         const userID = "your-user-id";  // TODO: Replace with actual user id
+        const summary = await fetchSummary(outputText.split(' ', 3).join(' '));  // Fetches summary for the first three words of outputText
+        const firstThreeLines = summary.split('. ').slice(0,3).join('. ') + '...';  // Extracts first three sentences from summary
 
         // After defining the videos array...
         const modal = document.getElementById("myModal");
@@ -348,7 +360,12 @@
         const tabs = Array.from(document.getElementsByClassName("tab"));
         const tabContents = Array.from(document.getElementsByClassName("tab-content"));
 
-        modalHeader.innerText = outputText;
+        if (summary !== "An error occurred while fetching the summary.") {
+          modalHeader.innerHTML = `${outputText} <br> <p>${firstThreeLines}<a href="https://en.wikipedia.org/wiki/${outputText}" target="_blank" style="text-decoration:underline;">Expand</a></p>`;
+        } else {
+          modalHeader.innerHTML = `${outputText}`;
+        }
+
 
         tabs.forEach(tab => {
           tab.addEventListener("click", () => {
@@ -359,6 +376,9 @@
 
             tab.classList.add("active");
             document.getElementById(target).classList.add("active");
+
+            tabs.forEach(t => t.style.fontWeight = "normal");
+            tab.style.fontWeight = "bold";
           });
         });
 
@@ -374,26 +394,60 @@
         let videoList = "";
         searchRes.hits.hits.forEach(hit => {
           const meta = hit._source;
+          var startTime = meta.start_time; // in milliseconds
+          var endTime = meta.end_time; // in milliseconds
+          var duration = endTime - startTime; // duration in milliseconds
+          var durationInSeconds = msToTime(duration); // convert to seconds
+          var videoId = meta.video_id;
+          var videoUrl = `https://yourbackend.com/stream?videoId=${videoId}`;
+          console.log(meta);
           videoList += `
             <div class="video-info">
               <div class="video-thumbnail">
-                <span class="video-duration">
-                00:00</span>
-          </div>
-          <div class="video-details">
-          <p><strong>Caption:</strong> ${meta.text}</p>
-          <p><strong>Extracted:</strong> ${meta.screen_extracted}</p>
-          <p><strong>Course:</strong> ${meta.course_name.replaceAll('_', ' ')}</p>
-          <p><strong>Timecode:</strong> ${msToTime(meta.start_time)} -> ${msToTime(meta.end_time)}</p>
-          </div>
-          </div>
+                <!-- Assuming meta.video_thumbnail is the URL of the video's thumbnail image -->
+                <img src="${meta.video_thumbnail}" alt="Video Thumbnail" style="width: 100%; height: 100%;">
+                <!-- Update video duration with the actual value from metadata -->
+                <span class="video-duration">${durationInSeconds}</span>
+              </div>
+              <div class="video-details">
+                <p><strong>${meta.video_title.replaceAll('_', ' ')}</strong></p>
+                <p>${meta.course_name.replaceAll('_', ' ')}</p>
+              </div>
+            </div>
+            <br>
           `
-          videoList += hit._source.video_title.replaceAll('_', ' ') + "<br>";  // Assuming each video has a title
         });
         videosTab.innerHTML = videoList;
         modal.style.display = "block";
       });
     };
+
+    // Fetch the first three sentences from Wikipedia
+    async function fetchSummary(term, context = "") {
+      try {
+        const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${term}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const json = await response.json();
+        return json.extract || "Summary not available.";  // If extract is empty, return a default message
+      } catch (error) {
+        console.error('Error:', error);
+        return "An error occurred while fetching the summary.";  // Return a default message on error
+      }
+    }
+
+    function msToTime(duration) {
+      var seconds = parseInt((duration / 1000) % 60),
+          minutes = parseInt((duration / (1000 * 60)) % 60),
+          hours = parseInt((duration / (1000 * 60 * 60)) % 24);
+
+      hours = (hours < 10) ? "0" + hours : hours;
+      minutes = (minutes < 10) ? "0" + minutes : minutes;
+      seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+      return (hours === "00") ? minutes + ":" + seconds : hours + ":" + minutes + ":" + seconds;
+    }
 
 
     function startCaptureMode() {
