@@ -129,7 +129,11 @@
     </div>
   </div>
 
-
+  <div id="assessment">
+    <!-- <h1>Question</h1>
+    <div id="assessment-description"> Description:</div>
+    <div id="assessment-options"> Options</div>  -->
+  </div>
 
   <button id="capture-btn">Capture</button>
   <script src='./player_files/tesseract.min.js'></script>
@@ -180,15 +184,35 @@
       },
       // Fetch from https://curio.oli.cmu.edu/assmt/645bc96ad7506204d38833f3
       assessment:
-      {
-        "_id": "645bc96ad7506204d38833f3",
-        "description": "TEST001",
-        "options": [
-          "{}"
-        ],
-        "__v": 0
-      }
-    })
+        {
+          "_id": "645bc96ad7506204d38833f3",
+          "description": "In JavaScript, how do you create an instance of a class?",
+          "options": [
+            "A) new MyClass();",
+            "B) MyClass.new();",
+            "C) create MyClass;",
+            "D) MyClass.create();"
+          ],
+          "__v": 0
+        }
+      })
+
+      function displayAssessment(material) {
+         const assessmentContainer = document.getElementById("assessment");
+         const description = material.assessment.description;
+         const options = material.assessment.options;
+
+         let content = `<h2>${description}</h2>`;
+
+         for (let i = 0; i < options.length; i++) {
+             content += `<div>
+                           <input type="radio" id="option${i}" name="assessment" value="${options[i]}">
+                           <label for="option${i}">${options[i]}</label>
+                         </div>`;
+         }
+
+         assessmentContainer.innerHTML = content;
+     }
 
     span.onclick = function () {
       modal.style.display = "none";
@@ -555,6 +579,7 @@
     captureBtn.addEventListener('click', startCaptureMode);
     window.addEventListener('load', () => {
       video = initPlayer(materials[0]);
+      displayAssessment(materials[0]);
     })
 
   </script>
