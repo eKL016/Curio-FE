@@ -233,7 +233,7 @@
         "width": "640",
         "height": "360"
       }`);
-
+      console.log(material.video.filename);
       // Remove https://curio.oli.cmu.edu/ in production env.
       player.innerHTML =
       `
@@ -397,16 +397,16 @@
           var startTime = meta.start_time; // in milliseconds
           var endTime = meta.end_time; // in milliseconds
           var duration = endTime - startTime; // duration in milliseconds
-          var durationInSeconds = msToTime(duration); // convert to seconds
+          var durationInSeconds = msToTime(duration); // convert to mm:ss
           var videoId = meta.video_id;
-          var videoUrl = `https://yourbackend.com/stream?videoId=${videoId}`;
           console.log(meta);
           videoList += `
-            <div class="video-info">
+            <div class="video-info" data-video-id="${videoId}" data-video-title="${meta.video_title.replaceAll('_', ' ')}" data-course-name="${meta.course_name.replaceAll('_', ' ')}" data-start-time="${startTime}">
               <div class="video-thumbnail">
-                <!-- Assuming meta.video_thumbnail is the URL of the video's thumbnail image -->
-                <img src="${meta.video_thumbnail}" alt="Video Thumbnail" style="width: 100%; height: 100%;">
-                <!-- Update video duration with the actual value from metadata -->
+              <video id="video-player" controls style="width: 100%; height: 100%;">
+                <source src="https://curio.oli.cmu.edu/videos/${meta.video_id}" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
                 <span class="video-duration">${durationInSeconds}</span>
               </div>
               <div class="video-details">
@@ -419,6 +419,46 @@
         });
         videosTab.innerHTML = videoList;
         modal.style.display = "block";
+        // Adding event listener on .video-info div
+        const videoInfoDivs = document.querySelectorAll('.video-info');
+        videoInfoDivs.forEach(div => {
+          div.addEventListener('click', (e) => {
+            const videoId = e.currentTarget.dataset.videoId;
+            const videoTitle = e.currentTarget.dataset.videoTitle;
+            const courseName = e.currentTarget.dataset.courseName;
+            const startTime = e.currentTarget.dataset.startTime;
+
+            // Load video and transcript
+            const videoSrc = `https://curio.oli.cmu.edu/videos/${videoId}`;  // TODO: link to loading videos from backend
+            //const transcript = loadTranscript(videoId); // TODO: Assuming loadTranscript function exists
+
+            // Update modal content
+            const modalContent = `
+              <div class="row">
+                <button id="back-btn">🠔</button>
+              </div>
+              <div class="row">
+                <h2>${videoTitle}</h2>
+              </div>
+              <div class="row">
+              <video id="video-player" controls>
+                <source src="${videoSrc}" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+              </div>
+              <div class="row">
+                <p><strong>Course: </strong>${courseName}</p>
+              </div>
+            `;
+            document.querySelector('.modal-content').innerHTML = modalContent;
+
+
+            // Add event listener on back button to revert to previous state
+            document.querySelector('#back-btn').addEventListener('click', () => {
+              document.querySelector('.modal-content').innerHTML = prevModalContent; // Assuming prevModalContent exists
+            });
+          });
+        });
       });
     };
 
