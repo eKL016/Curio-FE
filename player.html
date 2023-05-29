@@ -428,6 +428,9 @@
             const courseName = e.currentTarget.dataset.courseName;
             const startTime = e.currentTarget.dataset.startTime;
 
+            // Save current modal content before changing it
+            const prevModalContent = document.querySelector('.modal-content').innerHTML;
+
             // Load video and transcript
             const videoSrc = `https://curio.oli.cmu.edu/videos/${videoId}`;  // TODO: link to loading videos from backend
             //const transcript = loadTranscript(videoId); // TODO: Assuming loadTranscript function exists
@@ -456,7 +459,52 @@
             // Add event listener on back button to revert to previous state
             document.querySelector('#back-btn').addEventListener('click', () => {
               document.querySelector('.modal-content').innerHTML = prevModalContent; // Assuming prevModalContent exists
+
+              // Adding event listener on .video-info div again
+              const videoInfoDivs = document.querySelectorAll('.video-info');
+              videoInfoDivs.forEach(div => {
+                div.addEventListener('click', (e) => {
+                  const videoId = e.currentTarget.dataset.videoId;
+                  const videoTitle = e.currentTarget.dataset.videoTitle;
+                  const courseName = e.currentTarget.dataset.courseName;
+                  const startTime = e.currentTarget.dataset.startTime;
+
+                  // Save current modal content before changing it
+                  const prevModalContent = document.querySelector('.modal-content').innerHTML;
+
+                  // Load video and transcript
+                  const videoSrc = `https://curio.oli.cmu.edu/videos/${videoId}`;  // TODO: link to loading videos from backend
+                  //const transcript = loadTranscript(videoId); // TODO: Assuming loadTranscript function exists
+
+                  // Update modal content
+                  const modalContent = `
+                    <div class="row">
+                      <button id="back-btn">🠔</button>
+                    </div>
+                    <div class="row">
+                      <h2>${videoTitle}</h2>
+                    </div>
+                    <div class="row">
+                    <video id="video-player" controls>
+                      <source src="${videoSrc}" type="video/mp4">
+                      Your browser does not support the video tag.
+                    </video>
+                    </div>
+                    <div class="row">
+                      <p><strong>Course: </strong>${courseName}</p>
+                    </div>
+                  `;
+                  document.querySelector('.modal-content').innerHTML = modalContent;
+
+
+                  // Add event listener on back button to revert to previous state
+                  document.querySelector('#back-btn').addEventListener('click', () => {
+                    document.querySelector('.modal-content').innerHTML = prevModalContent; // Assuming prevModalContent exists
+                  });
+                });
+              });
             });
+
           });
         });
       });
