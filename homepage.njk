@@ -52,6 +52,11 @@
       }
     }
     const experimentsContainer = document.getElementById('experiments-container');
+    const handleClick = (eid, bid) => {
+      const [_, cid] = bid.split('-');
+      window.open(`exps/${eid}/${cid}`, "_blank");
+    }
+
 
     window.addEventListener('load', async () => {
       const experiments = await getExperiments();
@@ -84,10 +89,21 @@
         finishedAt.innerText = `Finished At: ${exp.finishedAt || 'N.A.'}`;
         expElement.appendChild(finishedAt);
 
+        [0, 1, 2, 3, 4].forEach(index => {
+          b = document.createElement('button');
+          b.id = `exp-${index}`;
+          b.className += "start-exp";
+          b.innerText = `Exp ${index}`;
+          b.type="button"
+          b.addEventListener('click', function(){
+            handleClick(exp._id, this.id);
+          });
+          expElement.appendChild(b);
+        });
+
         // Add event listener to start experiment
         expElement.addEventListener('click', () => {
-          // Start experiment
-          // Send experiment data to video player
+            return;
         });
 
         experimentsContainer.appendChild(expElement);
