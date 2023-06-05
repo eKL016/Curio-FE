@@ -24,10 +24,6 @@
         <div id="learning-path" class="tab-content"></div>
       </div>
     </div>
-    <div
-      id="assessment"><!-- <h1>Question</h1> <div id="assessment-description"> Description:</div> <div id="assessment-options"> Options</div>
-        -->
-    </div>
     <button id="capture-btn">Capture</button>
     <script src='https://curio.oli.cmu.edu/tesseract.min.js'></script>
     <script src="https://curio.oli.cmu.edu/video.min.js"></script>
@@ -59,23 +55,8 @@
       var lo = "";
       var currentCond = {{ condition }};
 
-      materials.push({video: {{ video | safe }}, assessment: {{ assmt | safe }}})
+      materials.push({video: {{ video | safe }}})
       lo = materials[0].video.learningObjs[0];
-      function displayAssessment(material) {
-        const assessmentContainer = document.getElementById("assessment");
-        const description = material.assessment.description;
-        const options = material.assessment.options;
-        let content = `<h2>${description}</h2>`;
-        for (let i = 0; i < options.length; i++) {
-          content += `
-            <div>
-              <input type="radio" id="option${i}" name="assessment" value="${options[i]}">
-              <label for="option${i}">${options[i]}</label>
-            </div>
-          `;
-        }
-        assessmentContainer.innerHTML = content;
-      }
       span.onclick = function () {
         modal.style.display = "none";
       }
@@ -285,6 +266,7 @@
                     <p><strong>${
                       meta.video_title.replaceAll('_', ' ')
                     }</strong></p>
+                    <p>"${meta.text}"</p>
                     <p>${
                       meta.course_name.replaceAll('_', ' ')
                     }</p>
@@ -459,7 +441,6 @@
       captureBtn.addEventListener('click', startCaptureMode);
       window.addEventListener('load', () => {
         video = initPlayer(materials[0]);
-        displayAssessment(materials[0]);
       })
       async function getVideoPath(video_id) {
         try {
