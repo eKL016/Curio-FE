@@ -53,7 +53,7 @@
       var captureBtn = document.getElementById('capture-btn');
       var selection = null;
       var lo = "";
-      var currentCond = {{ condition }};
+      var currentCond = 0;
 
       materials.push({video: {{ video | safe }}})
       lo = materials[0].video.learningObjs[0];
