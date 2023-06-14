@@ -2,6 +2,7 @@ const modal = document.getElementById("myModal");
 const span = document.getElementsByClassName("close")[0];
 const modalText = document.getElementById("modal-text");
 const captureBtn = document.getElementById('capture-btn');
+const namePtrn = /Course:\s+"([^"]+)"/;
 
 var video;
 var selecting = false;
@@ -15,11 +16,10 @@ var endPoint = {
 };
 
 var selection = null;
+var courseName = materials[0].video.description.match(namePtrn)[1];
 var lo = "";
-var vjsplayer;
-
-
 lo = materials[0].video.learningObjs[0];
+
 span.onclick = function () {
     modal.style.display = "none";
 }
@@ -29,12 +29,12 @@ span.onclick = function () {
 //     }
 // }
 
-async function getSearchResult(text, userID, lo, searchMode) {
+async function getSearchResult(text, userID, lo, courseName, searchMode) {
     const lmScore = Number(searchMode);
     try {
         const response = await fetch("https://curio.oli.cmu.edu/videos/search", {
             method: "POST",
-            body: new URLSearchParams({ text, lo, userID, lmScore })
+            body: new URLSearchParams({ text, userID, lo, courseName, lmScore })
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status
@@ -47,6 +47,9 @@ async function getSearchResult(text, userID, lo, searchMode) {
 }
 
 function initPlayer(material) {
+    const title = document.getElementById('courseTitle');
+    title.innerText = material.video.title.replaceAll('_', ' ');
+
     const player = document.createElement('video');
     player.setAttribute('id', 'my-video');
     player.setAttribute('class', 'video-js');
@@ -161,12 +164,7 @@ const detect = async () => {
 
 const searchAndModifyDOM = async (queryText) => {
     const searchMode = document.querySelector("input[name='searchmode']:checked").value;
-    const userID = "your-user-id"; // TODO: Replace with actual user id
-    const summary = await fetchSummary(queryText.split(' ', 3).join(' ')); // Fetches summary for the first three words of queryText
-    const firstThreeLines = summary
-        .split('. ')
-        .slice(0, 3)
-        .join('. ') + '...'; // Extracts first three sentences from summary After defining the videos array...
+    const userID = "pilot";
     const modal = document.getElementById("myModal");
     const modalHeader = document.getElementById("modal-header");
     const videosTab = document.getElementById("videos");
@@ -193,15 +191,7 @@ const searchAndModifyDOM = async (queryText) => {
     modalHeader.appendChild(searchButtonInModal);
 
     const summaryDiv = document.createElement('div');
-    if (summary !== "An error occurred while fetching the summary.") {
-        summaryDiv.innerHTML += `
-            <h3>${queryText}</h3>
-            <p>${firstThreeLines} <a href="https://en.wikipedia.org/wiki/${queryText}" target="_blank" style="text-decoration:underline;">Expand</a>
-            </p>`;
-    } else {
-        summaryDiv.innerHTML += `<h3>${queryText}</h3>`;
-    }
-    modalHeader.appendChild(summaryDiv);
+    
 
     tabs.forEach(tab => {
         tab.addEventListener("click", () => {
@@ -223,16 +213,22 @@ const searchAndModifyDOM = async (queryText) => {
         modalHeader.replaceChildren();
         videosTab.replaceChildren();
     }
-    // TODO: when SwaggerUI is implemented use below code
-    const searchRes = await getSearchResult(queryText, userID, lo, searchMode);
+
+    const {ESResult, chatGPTResult} = await getSearchResult(queryText, userID, lo, courseName, searchMode);
+    summaryDiv.innerHTML += `
+        <h3>${queryText}</h3>
+        <p>${chatGPTResult}</p>
+    `;
+    modalHeader.appendChild(summaryDiv);
+
     // Display videos in the modal
-    const promiseOfSearchRes = searchRes.map(res => new Promise(async (resolve, reject) => {
+    const promiseOfESResult = ESResult.map(res => new Promise(async (resolve, reject) => {
         const meta = res._source;
         console.log(meta);
         const [filename, captionFile] = await getVideoPath(meta.video_id)
         resolve([meta, filename, captionFile])
     }));
-    await Promise.all(promiseOfSearchRes).then((resolve) => {
+    await Promise.all(promiseOfESResult).then((resolve) => {
         resolve.forEach(
             res => {
                 const [meta, filename, captionFile] = res;
