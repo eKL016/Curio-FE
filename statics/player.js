@@ -4,6 +4,13 @@ const modalText = document.getElementById("modal-text");
 const captureBtn = document.getElementById('capture-btn');
 const namePtrn = /Course:\s+"([^"]+)"/;
 
+const SEARCH_MODE = {
+    PUNISH_LO: -1,
+    DISABLE_LO: 0,
+    HONOR_LO: 1,
+    GPT4: 2
+}
+
 var video;
 var selecting = false;
 var startPoint = {
@@ -30,19 +37,22 @@ span.onclick = function () {
 // }
 
 async function getSearchResult(text, userID, lo, courseName, searchMode) {
-    const lmScore = Number(searchMode);
-    try {
-        const response = await fetch("https://curio.oli.cmu.edu/videos/search", {
-            method: "POST",
-            body: new URLSearchParams({ text, userID, lo, courseName, lmScore })
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status
-                }`);
+    const mode = Number(searchMode);
+    if (mode < SEARCH_MODE.PUNISH_LO || mode > SEARCH_MODE.GPT4) throw new Error(`searchMode ${mode} not implemented.`);
+    else {
+        try {
+            const response = await fetch(`https://curio.oli.cmu.edu/search${mode == SEARCH_MODE.GPT4 ? 'GPT' : 'ES'}`, {
+                method: "POST",
+                body: new URLSearchParams({ text, userID, lo, courseName, lmScore: mode })
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            if (mode == SEARCH_MODE.GPT4) return response;
+            else return response.json();
+        } catch (error) {
+            console.error('Error:', error);
         }
-        return await response.json();
-    } catch (error) {
-        console.error('Error:', error);
     }
 }
 
@@ -191,7 +201,10 @@ const searchAndModifyDOM = async (queryText) => {
     modalHeader.appendChild(searchButtonInModal);
 
     const summaryDiv = document.createElement('div');
-    
+    summaryDiv.innerHTML = `
+        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+    `;
+    modalHeader.appendChild(summaryDiv);
 
     tabs.forEach(tab => {
         tab.addEventListener("click", () => {
@@ -213,15 +226,17 @@ const searchAndModifyDOM = async (queryText) => {
         modalHeader.replaceChildren();
         videosTab.replaceChildren();
     }
-
-    const {ESResult, chatGPTResult} = await getSearchResult(queryText, userID, lo, courseName, searchMode);
-    summaryDiv.innerHTML += `
-        <h3>${queryText}</h3>
-        <p>${chatGPTResult}</p>
-    `;
-    modalHeader.appendChild(summaryDiv);
+    
+    getSearchResult(queryText, userID, lo, courseName, SEARCH_MODE.GPT4).then(async (chatGPTResult) =>  {
+        summaryDiv.innerHTML = `
+            <h3>${queryText}</h3>
+            <p>${await chatGPTResult.text()}</p>
+        `;
+        
+    });
 
     // Display videos in the modal
+    const ESResult= await getSearchResult(queryText, userID, lo, courseName, searchMode);
     const promiseOfESResult = ESResult.map(res => new Promise(async (resolve, reject) => {
         const meta = res._source;
         console.log(meta);
